@@ -16,10 +16,10 @@ The document was translated for personal use.
 
 # Вступление
 
-CUPS предоставляет библиотеку "cups"  для взаимодействия с различными частями CUPS и с Internet Printing Protocol (IPP) принтерами. Доступ к функциям библиотеки осуществляется путем в `<cups/cups.h`
+CUPS предоставляет библиотеку "cups"  для взаимодействия с различными частями CUPS и с Internet Printing Protocol (IPP) принтерами. Доступ к функциям библиотеки осуществляется путем включения заголовочного файла `<cups/cups.h`
 
 CUPS основан на протоколе интернет-печати (IPP), который позволяет клиентам
-(приложения) для связи с сервером (планировщик, принтеры и т. д.) получить список адресатов, отправить задания на печать и т. д. Вы определяете сервер, с которым вы хотите общаться, используя указатель на непрозрачную структуру `http_t`. Константа `CUPS_HTTP_DEFAULT` может использоваться, когда вы хотите поговорить с планировщик CUPS.
+(приложениям) для связи с сервером (планировщик, принтеры и т. д.) получить список адресатов, отправить задания на печать и т. д. Вы определяете сервер, с которым вы хотите общаться, используя указатель на непрозрачную структуру `http_t`. Константа `CUPS_HTTP_DEFAULT` может использоваться, когда вы хотите взаимодействовать с  планировщиком CUPS.
 
 
 
@@ -274,36 +274,32 @@ const char *model = cupsGetOption("printer-make-and-model",
                                   dest->options);
 ```
 
-## Detailed Destination Information
+## Детальная информация о назначении
 
-Once a destination has been chosen, the `cupsCopyDestInfo` function can be used
-to gather detailed information about the destination:
+Для каждого назначения можно использовать функцию `cupsCopyDestInfo` для получения подробной информации о назначении.
 
-    cups_dinfo_t *
-    cupsCopyDestInfo(http_t *http, cups_dest_t *dest);
+```c
+cups_dinfo_t *cupsCopyDestInfo(http_t *http, cups_dest_t *dest);
+```
 
-The `http` argument specifies a connection to the CUPS scheduler and is
-typically the constant `CUPS_HTTP_DEFAULT`.  The `dest` argument specifies the
-destination to query.
+Параметр `http` определяет соединение с планировщиком CUPS и обычно используется константа `CUPS_HTTP_DEFAULT`.  Параметр `dest` указывает на назначение для запроса.
 
-The `cups_dinfo_t` structure that is returned contains a snapshot of the
-supported options and their supported, ready, and default values.  It also can
-report constraints between different options and values, and recommend changes
-to resolve those constraints.
+Возвращаемая структура `cups_dinfo_t` содержит моментальный снимок поддерживаемыx параметров и их  значения и значения по умолчанию. Это также может сообщать об ограничениях между различными параметрами и значениями и рекомендовать изменения чтобы разрешить эти ограничения.
 
-### Getting Supported Options and Values
 
-The `cupsCheckDestSupported` function can be used to test whether a particular
-option or option and value is supported:
 
-    int
-    cupsCheckDestSupported(http_t *http, cups_dest_t *dest,
-                           cups_dinfo_t *info,
-                           const char *option,
-                           const char *value);
+### Получение поддерживаемых параметров и значений
 
-The `option` argument specifies the name of the option to check.  The following
-constants can be used to check the various standard options:
+Можно использовать функцию`cupsCheckDestSupported` для проверки поддерживается ли опция или опция и значение:
+
+```c
+int cupsCheckDestSupported(http_t *http, cups_dest_t *dest,
+                       cups_dinfo_t *info,
+                       const char *option,
+                       const char *value);
+```
+
+Параметр `option` определяет имя проверяемой опции для проверки. Константы, указанные ниже, могут использоваться для проверки различных стандартных опций:
 
 - `CUPS_COPIES`: Controls the number of copies that are produced.
 - `CUPS_FINISHINGS`: A comma-delimited list of integer constants that control
@@ -338,50 +334,50 @@ constants can be used to check the various standard options:
   media: `CUPS_SIDES_ONE_SIDED`, `CUPS_SIDES_TWO_SIDED_PORTRAIT`, or
   `CUPS_SIDES_TWO_SIDED_LANDSCAPE`.
 
-If the `value` argument is `NULL`, the `cupsCheckDestSupported` function returns
-whether the option is supported by the destination.  Otherwise, the function
-returns whether the specified value of the option is supported.
+Если параметр`value` равен `NULL`, функция `cupsCheckDestSupported` возвращает поддерживается ли опция назначением. В противном случае, функция
+возвращает, поддерживается ли указанное значение параметра.
 
-The `cupsFindDestSupported` function returns the IPP attribute containing the
-supported values for a given option:
+Функция `cupsFindDestSupported` возвращает атрибут IPP, содержащий поддерживаемые значения для данной опции:
 
-     ipp_attribute_t *
-     cupsFindDestSupported(http_t *http, cups_dest_t *dest,
-                           cups_dinfo_t *dinfo,
-                           const char *option);
+```c
+ ipp_attribute_t *cupsFindDestSupported(http_t *http, cups_dest_t *dest,
+                       cups_dinfo_t *dinfo,
+                       const char *option);
+```
 
-For example, the following code prints the supported finishing processes for a
-destination, if any, to the standard output:
+Например, следующий код печатает поддерживаемые процессы финишной обработки для назначения, если есть, на стандартный вывод:
 
-    cups_dinfo_t *info = cupsCopyDestInfo(CUPS_HTTP_DEFAULT,
-                                          dest);
-    
-    if (cupsCheckDestSupported(CUPS_HTTP_DEFAULT, dest, info,
-                               CUPS_FINISHINGS, NULL))
-    {
-      ipp_attribute_t *finishings =
-          cupsFindDestSupported(CUPS_HTTP_DEFAULT, dest, info,
-                                CUPS_FINISHINGS);
-      int i, count = ippGetCount(finishings);
-    
-      puts("finishings supported:");
-      for (i = 0; i < count; i ++)
-        printf("  %d\n", ippGetInteger(finishings, i));
-    }
-    else
-      puts("finishings not supported.");
+```c
+cups_dinfo_t *info = cupsCopyDestInfo(CUPS_HTTP_DEFAULT,
+                                      dest);
 
-The "job-creation-attributes" option can be queried to get a list of supported
-options.  For example, the following code prints the list of supported options
-to the standard output:
+if (cupsCheckDestSupported(CUPS_HTTP_DEFAULT, dest, info,
+                           CUPS_FINISHINGS, NULL))
+{
+  ipp_attribute_t *finishings =
+      cupsFindDestSupported(CUPS_HTTP_DEFAULT, dest, info,
+                            CUPS_FINISHINGS);
+  int i, count = ippGetCount(finishings);
 
-    ipp_attribute_t *attrs =
-        cupsFindDestSupported(CUPS_HTTP_DEFAULT, dest, info,
-                              "job-creation-attributes");
-    int i, count = ippGetCount(attrs);
-    
-    for (i = 0; i < count; i ++)
-      puts(ippGetString(attrs, i, NULL));
+  puts("finishings supported:");
+  for (i = 0; i < count; i ++)
+    printf("  %d\n", ippGetInteger(finishings, i));
+}
+else
+  puts("finishings not supported.");
+```
+
+Параметр «job-creation-attributes» можно запросить, чтобы получить список поддерживаемых параметров. Например, следующий код выводит список поддерживаемых параметров на стандартный вывод:
+
+```c
+ipp_attribute_t *attrs =
+    cupsFindDestSupported(CUPS_HTTP_DEFAULT, dest, info,
+                          "job-creation-attributes");
+int i, count = ippGetCount(attrs);
+
+for (i = 0; i < count; i ++)
+  puts(ippGetString(attrs, i, NULL));
+```
 
 ### Getting Default Values
 
