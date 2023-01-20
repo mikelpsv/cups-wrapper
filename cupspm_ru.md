@@ -268,9 +268,11 @@ int my_get_dests(cups_ptype_t type, cups_ptype_t mask,
 
 Используйте функцию `cupsGetOption` для получения значения. Например, следующий код возвращает марку и модель назначения:
 
-    const char *model = cupsGetOption("printer-make-and-model",
-                                      dest->num_options,
-                                      dest->options);
+```c
+const char *model = cupsGetOption("printer-make-and-model",
+                                  dest->num_options,
+                                  dest->options);
+```
 
 ## Detailed Destination Information
 
