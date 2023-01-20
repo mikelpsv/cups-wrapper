@@ -64,8 +64,7 @@ CUPS предназначен для того, чтобы оградить по�
 #include <stdio.h>
 #include <cups/cups.h>
 
-int print_dest(void *user_data, unsigned flags, cups_dest_t *dest)
-{
+int print_dest(void *user_data, unsigned flags, cups_dest_t *dest){
   if (dest->instance)
     printf("%s/%s\n", dest->name, dest->instance);
   else
@@ -74,8 +73,7 @@ int print_dest(void *user_data, unsigned flags, cups_dest_t *dest)
   return (1);
 }
 
-int main(void)
-{
+int main(void){
   cupsEnumDests(CUPS_DEST_FLAGS_NONE, 1000, NULL, 0, 0, print_dest, NULL);
   return (0);
 }
@@ -189,17 +187,14 @@ typedef int (*cups_dest_cb_t)(void *user_data,
 Следующий пример показывает, как использовать `cupsEnumDests` для получения отфильтрованного массива назначений:
 
 ```c
-typedef struct
-{
+typedef struct{
   int num_dests;
   cups_dest_t *dests;
 } my_user_data_t;
 
 int my_dest_cb(my_user_data_t *user_data, unsigned flags,
-           cups_dest_t *dest)
-{
-  if (flags & CUPS_DEST_FLAGS_REMOVED)
-  {
+           cups_dest_t *dest){
+  if (flags & CUPS_DEST_FLAGS_REMOVED){
    /*
     * Удаляем назначение из массива...
     */
@@ -207,9 +202,7 @@ int my_dest_cb(my_user_data_t *user_data, unsigned flags,
         cupsRemoveDest(dest->name, dest->instance,
                        user_data->num_dests,
                        &(user_data->dests));
-  }
-  else
-  {
+  }else{
    /*
     * Добавляем назначение в массив...
     */
@@ -221,14 +214,12 @@ int my_dest_cb(my_user_data_t *user_data, unsigned flags,
 }
 
 int my_get_dests(cups_ptype_t type, cups_ptype_t mask,
-             cups_dest_t **dests)
-{
+             cups_dest_t **dests){
   my_user_data_t user_data = { 0, NULL };
 
   if (!cupsEnumDests(CUPS_DEST_FLAGS_NONE, 1000, NULL, type,
                      mask, (cups_dest_cb_t)my_dest_cb,
-                     &user_data))
-  {
+                     &user_data)){
    /*
     * Произошла ошибка, освобождаем все назначения и выходим...
     */
@@ -352,8 +343,7 @@ cups_dinfo_t *info = cupsCopyDestInfo(CUPS_HTTP_DEFAULT,
                                       dest);
 
 if (cupsCheckDestSupported(CUPS_HTTP_DEFAULT, dest, info,
-                           CUPS_FINISHINGS, NULL))
-{
+                           CUPS_FINISHINGS, NULL)){
   ipp_attribute_t *finishings =
       cupsFindDestSupported(CUPS_HTTP_DEFAULT, dest, info,
                             CUPS_FINISHINGS);
@@ -362,8 +352,7 @@ if (cupsCheckDestSupported(CUPS_HTTP_DEFAULT, dest, info,
   puts("finishings supported:");
   for (i = 0; i < count; i ++)
     printf("  %d\n", ippGetInteger(finishings, i));
-}
-else
+} else
   puts("finishings not supported.");
 ```
 
@@ -379,112 +368,100 @@ for (i = 0; i < count; i ++)
   puts(ippGetString(attrs, i, NULL));
 ```
 
-### Getting Default Values
+### Получение значений по-умолчанию
 
-There are two sets of default values - user defaults that are available via the
-`num_options` and `options` members of the `cups_dest_t` structure, and
-destination defaults that available via the `cups_dinfo_t` structure and the
-`cupsFindDestDefault` function which returns the IPP attribute containing the
-default value(s) for a given option:
+Существует два набора значений по умолчанию: значения по умолчанию для пользователя, которые доступны через элементы `num_options` и `options` структуры `cups_dest_t`, и значения по умолчанию для назначения, доступные через структуру `cups_dinfo_t` и функцию `cupsFindDestDefault`, которая возвращает IPP атрибут, содержащий значение(я) по умолчанию для данной опции:
 
-    ipp_attribute_t *
-    cupsFindDestDefault(http_t *http, cups_dest_t *dest,
-                        cups_dinfo_t *dinfo,
-                        const char *option);
+```c
+ipp_attribute_t *cupsFindDestDefault(http_t *http, cups_dest_t *dest,
+                    cups_dinfo_t *dinfo,
+                    const char *option);
+```
 
-The user defaults from `cupsGetOption` should always take preference over the
-destination defaults.  For example, the following code prints the default
-finishings value(s) to the standard output:
+Пользовательские значения по умолчанию из `cupsGetOption` всегда должны ссылаться на значения по умолчанию назначения. Например, следующий код выводит значения (finishings) по умолчанию на стандартный вывод:
 
-    const char *def_value =
-        cupsGetOption(CUPS_FINISHINGS, dest->num_options,
-                      dest->options);
-    ipp_attribute_t *def_attr =
-        cupsFindDestDefault(CUPS_HTTP_DEFAULT, dest, info,
-                            CUPS_FINISHINGS);
-    
-    if (def_value != NULL)
-    {
-      printf("Default finishings: %s\n", def_value);
-    }
-    else
-    {
-      int i, count = ippGetCount(def_attr);
-    
-      printf("Default finishings: %d",
-             ippGetInteger(def_attr, 0));
-      for (i = 1; i < count; i ++)
-        printf(",%d", ippGetInteger(def_attr, i));
-      putchar('\n');
-    }
+```c
+const char *def_value =
+    cupsGetOption(CUPS_FINISHINGS, dest->num_options,
+                  dest->options);
+ipp_attribute_t *def_attr =
+    cupsFindDestDefault(CUPS_HTTP_DEFAULT, dest, info,
+                        CUPS_FINISHINGS);
 
-### Getting Ready (Loaded) Values
+if (def_value != NULL) {
+  printf("Default finishings: %s\n", def_value);
+} else {
+  int i, count = ippGetCount(def_attr);
 
-The finishings and media options also support queries for the ready, or loaded,
-values.  For example, a printer may have punch and staple finishers installed
-but be out of staples - the supported values will list both punch and staple
-finishing processes but the ready values will only list the punch processes.
-Similarly, a printer may support hundreds of different sizes of media but only
-have a single size loaded at any given time - the ready values are limited to
-the media that is actually in the printer.
+  printf("Default finishings: %d",
+         ippGetInteger(def_attr, 0));
+  for (i = 1; i < count; i ++)
+    printf(",%d", ippGetInteger(def_attr, i));
 
-The `cupsFindDestReady` function finds the IPP attribute containing the ready
-values for a given option:
+  putchar('\n');
+}
+```
 
-    ipp_attribute_t *
-    cupsFindDestReady(http_t *http, cups_dest_t *dest,
-                      cups_dinfo_t *dinfo, const char *option);
+### Получение готовых (загруженных) значений
 
-For example, the following code lists the ready finishing processes:
+*The finishings and media options* поддерживают запросы на готовые или загруженные значения. Например, на принтере могут быть установлены финишеры для перфорации и сшивания, но скрепок нет — в поддерживаемых значениях будут указаны процессы финишной обработки и перфорации, а в значениях готовности будут перечислены только процессы перфорации. 
+Точно так же принтер может поддерживать сотни различных размеров носителей, но момент времени может загружаться только один размер — готовые значения ограничены носителем, который фактически находится в принтере.
 
-    ipp_attribute_t *ready_finishings =
-        cupsFindDestReady(CUPS_HTTP_DEFAULT, dest, info,
-                          CUPS_FINISHINGS);
-    
-    if (ready_finishings != NULL)
-    {
-      int i, count = ippGetCount(ready_finishings);
-    
-      puts("finishings ready:");
-      for (i = 0; i < count; i ++)
-        printf("  %d\n", ippGetInteger(ready_finishings, i));
-    }
-    else
-      puts("no finishings are ready.");
+Функция `cupsFindDestReady` находит IPP атрибут, содержащий *готовые* значения для данной опции:
 
-### Media Size Options
+```c
+ipp_attribute_t *cupsFindDestReady(http_t *http, cups_dest_t *dest,
+                  cups_dinfo_t *dinfo, const char *option);
+```
 
-CUPS provides functions for querying the dimensions and margins for each of the
-supported media size options.  The `cups_size_t` structure is used to describe a
-media size:
+Например, в следующем коде перечислены процессы, готовые для  финишной обработки:
 
-    typedef struct cups_size_s
-    {
-      char media[128];
-      int width, length;
-      int bottom, left, right, top;
-    } cups_size_t;
+```c
+ipp_attribute_t *ready_finishings =
+    cupsFindDestReady(CUPS_HTTP_DEFAULT, dest, info,
+                      CUPS_FINISHINGS);
 
-The `width` and `length` members specify the dimensions of the media in
-hundredths of millimeters (1/2540th of an inch).  The `bottom`, `left`, `right`,
-and `top` members specify the margins of the printable area, also in hundredths
-of millimeters.
+if (ready_finishings != NULL){
+  int i, count = ippGetCount(ready_finishings);
+
+  puts("finishings ready:");
+  for (i = 0; i < count; i ++)
+    printf("  %d\n", ippGetInteger(ready_finishings, i));
+} else
+  puts("no finishings are ready.");
+```
+
+### Параметры размера носителя
+
+CUPS предоставляет функции для запроса размеров и полей для каждого из поддерживаемых параметров размера носителя. Структура `cups_size_t` используется для описания размера носителя:
+
+```c
+typedef struct cups_size_s{
+  char media[128];
+  int width, length;
+  int bottom, left, right, top;
+} cups_size_t;
+```
+
+Параметры `width` и `length` определяют размеры носителя в сотые доли миллиметра (1/2540 дюйма), a `bottom`, `left`, `right` и `top` определяют поля области печати, также в сотых долях миллиметров.
 
 The `cupsGetDestMediaByName` and `cupsGetDestMediaBySize` functions lookup the
 media size information using a standard media size name or dimensions in
 hundredths of millimeters:
 
-    int
-    cupsGetDestMediaByName(http_t *http, cups_dest_t *dest,
-                           cups_dinfo_t *dinfo,
-                           const char *media,
-                           unsigned flags, cups_size_t *size);
-    
-    int
-    cupsGetDestMediaBySize(http_t *http, cups_dest_t *dest,
-                           cups_dinfo_t *dinfo,
-                           int width, int length,
-                           unsigned flags, cups_size_t *size);
+Функции `cupsGetDestMediaByName` и `cupsGetDestMediaBySize` ищут информацию о размере носителя с использованием имени стандартного размера носителя или размеров в сотые доли миллиметра:
+
+```c
+int cupsGetDestMediaByName(http_t *http, cups_dest_t *dest,
+                       cups_dinfo_t *dinfo,
+                       const char *media,
+                       unsigned flags, cups_size_t *size);
+
+int cupsGetDestMediaBySize(http_t *http, cups_dest_t *dest,
+                       cups_dinfo_t *dinfo,
+                       int width, int length,
+                       unsigned flags, cups_size_t *size);
+```
 
 The `media`, `width`, and `length` arguments specify the size to lookup.  The
 `flags` argument specifies a bitfield controlling various lookup options:
