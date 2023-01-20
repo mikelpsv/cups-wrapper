@@ -54,7 +54,11 @@ void example_enum_dests_v1(){
 	const int num_dests = my_get_dests_v1(0, 0, &ds);
   	printf("Найдено %d\n", num_dests);
     for (int k=0; k<num_dests; k++){
-     	printf("    %s\n", ds[k].name);
+     	
+     	const char *model = cupsGetOption("printer-make-and-model",
+                                  ds[k].num_options,
+                                  ds[k].options);
+     	printf("    %s (%s)\n", ds[k].name, model);
     }
 }
 

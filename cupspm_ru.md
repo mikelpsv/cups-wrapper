@@ -246,38 +246,27 @@ int my_get_dests(cups_ptype_t type, cups_ptype_t mask,
 }
 ```
 
-## Basic Destination Information
+## Основная информация о назначении
 
-The `num_options` and `options` members of the `cups_dest_t` structure provide
-basic attributes about the destination in addition to the user default options
-and values for that destination.  The following names are predefined for various
-destination attributes:
+Поля `num_options` и `options` структуры `cups_dest_t` предоставляют базовые  атрибуты назначения, в дополнение к пользовательским опциям и значениям того же нащначения.  Следующие имена предопределены для различных атрибутов назначения:
 
-- "auth-info-required": The type of authentication required for printing to this
-  destination: "none", "username,password", "domain,username,password", or
+- "auth-info-required": Тип аутентификации, необходимый для печати в это назначение: "none", "username,password", "domain,username,password", or
   "negotiate" (Kerberos).
-- "printer-info": The human-readable description of the destination such as "My
+- "printer-info": Удобочитаемое описание назначение, например "My
   Laser Printer".
-- "printer-is-accepting-jobs": "true" if the destination is accepting new jobs,
-  "false" otherwise.
-- "printer-is-shared": "true" if the destination is being shared with other
-  computers, "false" otherwise.
-- "printer-location": The human-readable location of the destination such as
-  "Lab 4".
-- "printer-make-and-model": The human-readable make and model of the destination
-  such as "ExampleCorp LaserPrinter 4000 Series".
-- "printer-state": "3" if the destination is idle, "4" if the destination is
-  printing a job, and "5" if the destination is stopped.
-- "printer-state-change-time": The UNIX time when the destination entered the
-  current state.
-- "printer-state-reasons": Additional comma-delimited state keywords for the
-  destination such as "media-tray-empty-error" and "toner-low-warning".
-- "printer-type": The `cups_ptype_t` value associated with the destination.
-- "printer-uri-supported": The URI associated with the destination; if not set,
-  this destination was discovered but is not yet setup as a local printer.
+- "printer-is-accepting-jobs": "true" назначение принемает новые задания,
+  "false" в противном случае.
+- "printer-is-shared": "true" назначение используется совменстно с другими компьютерами, "false" в противном случае.
+- "printer-location":  Удобочитаемое местоположение назначения, например «Лаборатория 4».
+- "printer-make-and-model":  Удобочитаемая марка и модель назначения, например
+   "ExampleCorp LaserPrinter 4000 Series".
+- "printer-state": Состояние: "3" если назначение свободно, "4" выполняется задание, и "5" назначение остановлено
+- "printer-state-change-time": Время UNIX установки в текущее состояние.
+- "printer-state-reasons": Дополнительные ключевые слова состояния, разделенные запятыми, например «ошибка пустого лотка носителя» и «предупреждение о  низком уровне тонера».
+- "printer-type": Значение `cups_ptype_t`, связанное с назначением. 
+- "printer-uri-supported": URI, связанный с назначением; если не установлено, это назначение было обнаружено, но еще не настроено как локальный принтер.
 
-Use the `cupsGetOption` function to retrieve the value.  For example, the
-following code gets the make and model of a destination:
+Используйте функцию `cupsGetOption` для получения значения. Например, следующий код возвращает марку и модель назначения:
 
     const char *model = cupsGetOption("printer-make-and-model",
                                       dest->num_options,
