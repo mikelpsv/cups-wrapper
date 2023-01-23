@@ -11,21 +11,13 @@ cups_dest_t *ds;
 
 
 void printf_pdf(cups_dest_t *dest){
-	cups_dinfo_t *info;
-
-
 	int job_id = 0;
 	int num_options = 0;
+	cups_dinfo_t *info;
 	cups_option_t *options = NULL;
-
-
 	FILE *fp = fopen("filename.pdf", "rb");
 	size_t bytes;
 	char buffer[65536];
-
-
-//	printf("%s\n", dest->name);
-//	return
 
 	info = cupsCopyDestInfo(CUPS_HTTP_DEFAULT, dest);
 
@@ -38,8 +30,6 @@ void printf_pdf(cups_dest_t *dest){
 	  printf("Created job: %d\n", job_id);
 	else
 	  printf("Unable to create job: %s\n", cupsLastErrorString());
-
-
 
 	if (cupsStartDestDocument(CUPS_HTTP_DEFAULT, dest, info, job_id, "filename.pdf", CUPS_FORMAT_PDF, 0, NULL, 1) == HTTP_STATUS_CONTINUE) {
   	
@@ -83,9 +73,7 @@ int my_get_dests_v1(cups_ptype_t type, cups_ptype_t mask, cups_dest_t **dests){
     */
 
     cupsFreeDests(user_data.num_dests, user_data.dests);
-
     *dests = NULL;
-
     return (0);
   }
 
@@ -94,7 +82,6 @@ int my_get_dests_v1(cups_ptype_t type, cups_ptype_t mask, cups_dest_t **dests){
   */
 
   *dests = user_data.dests;
-
   return (user_data.num_dests);
 }
 
@@ -118,7 +105,7 @@ void example_enum_dests_v1(){
 
 
 
-
+/*
 int print_dest_v0(void *user_data, unsigned flags, cups_dest_t *dest){
   if (dest->instance)
     printf("- %s/%s\n", dest->name, dest->instance);
@@ -130,7 +117,7 @@ int print_dest_v0(void *user_data, unsigned flags, cups_dest_t *dest){
 
 void example_enum_dests_v0(){
 	cupsEnumDests(CUPS_DEST_FLAGS_NONE, 1000, NULL, 0, 0, print_dest_v0, NULL);	
-}
+}*/
 
 int main (int argc, char **argv) {
   //example_enum_dests_v0();
