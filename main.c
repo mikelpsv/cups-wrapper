@@ -9,6 +9,55 @@ typedef struct{
 
 cups_dest_t *ds;
 
+
+void printf_pdf(cups_dest_t *dest){
+	cups_dinfo_t *info;
+
+
+	int job_id = 0;
+	int num_options = 0;
+	cups_option_t *options = NULL;
+
+
+	FILE *fp = fopen("filename.pdf", "rb");
+	size_t bytes;
+	char buffer[65536];
+
+
+//	printf("%s\n", dest->name);
+//	return
+
+	info = cupsCopyDestInfo(CUPS_HTTP_DEFAULT, dest);
+
+	num_options = cupsAddOption(CUPS_COPIES, "1", num_options, &options);
+	num_options = cupsAddOption(CUPS_MEDIA, CUPS_MEDIA_LETTER, num_options, &options);
+	num_options = cupsAddOption(CUPS_SIDES, CUPS_SIDES_TWO_SIDED_PORTRAIT, num_options, &options);
+
+
+	if (cupsCreateDestJob(CUPS_HTTP_DEFAULT, dest, info, &job_id, "My Document", num_options, options) == IPP_STATUS_OK)
+	  printf("Created job: %d\n", job_id);
+	else
+	  printf("Unable to create job: %s\n", cupsLastErrorString());
+
+
+
+	if (cupsStartDestDocument(CUPS_HTTP_DEFAULT, dest, info, job_id, "filename.pdf", CUPS_FORMAT_PDF, 0, NULL, 1) == HTTP_STATUS_CONTINUE) {
+  	
+  		while ((bytes = fread(buffer, 1, sizeof(buffer), fp)) > 0)
+    		if (cupsWriteRequestData(CUPS_HTTP_DEFAULT, buffer, bytes) != HTTP_STATUS_CONTINUE)
+      		break;
+
+  	
+  		if (cupsFinishDestDocument(CUPS_HTTP_DEFAULT, dest, info) == IPP_STATUS_OK)
+    		puts("Document send succeeded.");
+  		else
+    		printf("Document send failed: %s\n", cupsLastErrorString());
+	}
+
+	fclose(fp);
+}
+
+
 int my_dest_cb_v1(my_user_data_t *user_data, unsigned flags, cups_dest_t *dest){
   
   if (flags & CUPS_DEST_FLAGS_REMOVED){
@@ -58,7 +107,11 @@ void example_enum_dests_v1(){
      	const char *model = cupsGetOption("printer-make-and-model",
                                   ds[k].num_options,
                                   ds[k].options);
-     	printf("    %s (%s)\n", ds[k].name, model);
+
+     	if (strcmp( ds[k].name, "ECOM-чб-1") == 0){
+     		printf("    %s (%s)\n", ds[k].name, model);
+     		printf_pdf(&(ds[k]));
+     	}
     }
 }
 
