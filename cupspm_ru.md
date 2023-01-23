@@ -7,7 +7,7 @@ version: 2.3.6
 
 Оригинал документа: https://github.com/apple/cups/blob/master/cups/cupspm.md
 
-The document was translated for personal use.
+The document was translated for personal use [@mikelpsv](https://github.com/mikelpsv)
 
 ...
 
