@@ -445,10 +445,6 @@ typedef struct cups_size_s{
 
 Параметры `width` и `length` определяют размеры носителя в сотые доли миллиметра (1/2540 дюйма), a `bottom`, `left`, `right` и `top` определяют поля области печати, также в сотых долях миллиметров.
 
-The `cupsGetDestMediaByName` and `cupsGetDestMediaBySize` functions lookup the
-media size information using a standard media size name or dimensions in
-hundredths of millimeters:
-
 Функции `cupsGetDestMediaByName` и `cupsGetDestMediaBySize` ищут информацию о размере носителя с использованием имени стандартного размера носителя или размеров в сотые доли миллиметра:
 
 ```c
@@ -463,10 +459,8 @@ int cupsGetDestMediaBySize(http_t *http, cups_dest_t *dest,
                        unsigned flags, cups_size_t *size);
 ```
 
-The `media`, `width`, and `length` arguments specify the size to lookup.  The
-`flags` argument specifies a bitfield controlling various lookup options:
+Параметры `media`, `width` и `length` указывают размеры для поиска. Параметр `flags` определяет битовое поле, управляющее различными параметрами поиска:
 
-- `CUPS_MEDIA_FLAGS_DEFAULT`: Find the closest size supported by the printer.
 - `CUPS_MEDIA_FLAGS_BORDERLESS`: Find a borderless size.
 - `CUPS_MEDIA_FLAGS_DUPLEX`: Find a size compatible with two-sided printing.
 - `CUPS_MEDIA_FLAGS_EXACT`: Find an exact match for the size.
@@ -474,218 +468,197 @@ The `media`, `width`, and `length` arguments specify the size to lookup.  The
   configuration of the media in each tray/source, find the size amongst the
   "ready" media.
 
-If a matching size is found for the destination, the size information is stored
-in the structure pointed to by the `size` argument and 1 is returned.  Otherwise
-0 is returned.
+Если для назначения найден соответствующий размер, информация о размере сохраняется в структуре, на которую указывает аргумент `size`, и возвращается 1. В противном случае возвращается 0.
 
-For example, the following code prints the margins for two-sided printing on US
-Letter media:
+Например, следующий код печатает данные размеров полей для двусторонней печати на носителе US Letter:
 
-    cups_size_t size;
-    
-    if (cupsGetDestMediaByName(CUPS_HTTP_DEFAULT, dest, info,
-                               CUPS_MEDIA_LETTER,
-                               CUPS_MEDIA_FLAGS_DUPLEX, &size))
-    {
-      puts("Margins for duplex US Letter:");
-      printf("  Bottom: %.2fin\n", size.bottom / 2540.0);
-      printf("    Left: %.2fin\n", size.left / 2540.0);
-      printf("   Right: %.2fin\n", size.right / 2540.0);
-      printf("     Top: %.2fin\n", size.top / 2540.0);
-    }
-    else
-      puts("Margins for duplex US Letter are not available.");
+```c
+cups_size_t size;
 
-You can also enumerate all of the sizes that match a given `flags` value using
-the `cupsGetDestMediaByIndex` and `cupsGetDestMediaCount` functions:
+if (cupsGetDestMediaByName(CUPS_HTTP_DEFAULT, dest, info,
+                           CUPS_MEDIA_LETTER,
+                           CUPS_MEDIA_FLAGS_DUPLEX, &size)){
+  puts("Margins for duplex US Letter:");
+  printf("  Bottom: %.2fin\n", size.bottom / 2540.0);
+  printf("    Left: %.2fin\n", size.left / 2540.0);
+  printf("   Right: %.2fin\n", size.right / 2540.0);
+  printf("     Top: %.2fin\n", size.top / 2540.0);
+} else
+  puts("Margins for duplex US Letter are not available.");
+```
 
-    int
-    cupsGetDestMediaByIndex(http_t *http, cups_dest_t *dest,
-                            cups_dinfo_t *dinfo, int n,
-                            unsigned flags, cups_size_t *size);
-    
-    int
-    cupsGetDestMediaCount(http_t *http, cups_dest_t *dest,
-                          cups_dinfo_t *dinfo, unsigned flags);
+Вы также можете перечислить все размеры, соответствующие заданному значению `flags`, используя функции `cupsGetDestMediaByIndex` и `cupsGetDestMediaCount`:
 
-For example, the following code prints the list of ready media and corresponding
-margins:
+```c
+int cupsGetDestMediaByIndex(http_t *http, cups_dest_t *dest,
+                        cups_dinfo_t *dinfo, int n,
+                        unsigned flags, cups_size_t *size);
 
-    cups_size_t size;
-    int i;
-    int count = cupsGetDestMediaCount(CUPS_HTTP_DEFAULT,
-                                      dest, info,
-                                      CUPS_MEDIA_FLAGS_READY);
-    
-    for (i = 0; i < count; i ++)
-    {
-      if (cupsGetDestMediaByIndex(CUPS_HTTP_DEFAULT, dest, info,
-                                  i, CUPS_MEDIA_FLAGS_READY,
-                                  &size))
-      {
-        printf("%s:\n", size.name);
-        printf("   Width: %.2fin\n", size.width / 2540.0);
-        printf("  Length: %.2fin\n", size.length / 2540.0);
-        printf("  Bottom: %.2fin\n", size.bottom / 2540.0);
-        printf("    Left: %.2fin\n", size.left / 2540.0);
-        printf("   Right: %.2fin\n", size.right / 2540.0);
-        printf("     Top: %.2fin\n", size.top / 2540.0);
-      }
-    }
+int cupsGetDestMediaCount(http_t *http, cups_dest_t *dest,
+                      cups_dinfo_t *dinfo, unsigned flags);
+```
 
-Finally, the `cupsGetDestMediaDefault` function returns the default media size:
+Например, следующий код выводит список используемых носителей и соответствующие отступы:
 
-    int
-    cupsGetDestMediaDefault(http_t *http, cups_dest_t *dest,
-                            cups_dinfo_t *dinfo, unsigned flags,
-                            cups_size_t *size);
+```c
+cups_size_t size;
+int i;
+int count = cupsGetDestMediaCount(CUPS_HTTP_DEFAULT,
+                                  dest, info,
+                                  CUPS_MEDIA_FLAGS_READY);
 
-### Localizing Options and Values
+for (i = 0; i < count; i ++){
+  if (cupsGetDestMediaByIndex(CUPS_HTTP_DEFAULT, dest, info,
+                              i, CUPS_MEDIA_FLAGS_READY,
+                              &size)){
+    printf("%s:\n", size.name);
+    printf("   Width: %.2fin\n", size.width / 2540.0);
+    printf("  Length: %.2fin\n", size.length / 2540.0);
+    printf("  Bottom: %.2fin\n", size.bottom / 2540.0);
+    printf("    Left: %.2fin\n", size.left / 2540.0);
+    printf("   Right: %.2fin\n", size.right / 2540.0);
+    printf("     Top: %.2fin\n", size.top / 2540.0);
+  }
+}
+```
 
-CUPS provides three functions to get localized, human-readable strings in the
-user's current locale for options and values: `cupsLocalizeDestMedia`,
-`cupsLocalizeDestOption`, and `cupsLocalizeDestValue`:
+Наконец, функция `cupsGetDestMediaDefault` возвращает размер носителя по умолчанию:
 
-    const char *
-    cupsLocalizeDestMedia(http_t *http, cups_dest_t *dest,
-                          cups_dinfo_t *info, unsigned flags,
-                          cups_size_t *size);
-    
-    const char *
-    cupsLocalizeDestOption(http_t *http, cups_dest_t *dest,
-                           cups_dinfo_t *info,
-                           const char *option);
-    
-    const char *
-    cupsLocalizeDestValue(http_t *http, cups_dest_t *dest,
-                          cups_dinfo_t *info,
-                          const char *option, const char *value);
+```c
+int cupsGetDestMediaDefault(http_t *http, cups_dest_t *dest,
+                        cups_dinfo_t *dinfo, unsigned flags,
+                        cups_size_t *size);
+```
 
-## Submitting a Print Job
+### Локализация параметров и значений
 
-Once you are ready to submit a print job, you create a job using the
-`cupsCreateDestJob` function:
+CUPS предоставляет три функции для получения локализованных, удобочитаемых строк в текущей локали пользователя для параметров и значений: `cupsLocalizeDestMedia`, `cupsLocalizeDestOption` и `cupsLocalizeDestValue`:
 
-    ipp_status_t
-    cupsCreateDestJob(http_t *http, cups_dest_t *dest,
-                      cups_dinfo_t *info, int *job_id,
-                      const char *title, int num_options,
-                      cups_option_t *options);
+```c
+const char * cupsLocalizeDestMedia(http_t *http, cups_dest_t *dest,
+                      cups_dinfo_t *info, unsigned flags,
+                      cups_size_t *size);
 
-The `title` argument specifies a name for the print job such as "My Document".
-The `num_options` and `options` arguments specify the options for the print
-job which are allocated using the `cupsAddOption` function.
+const char * cupsLocalizeDestOption(http_t *http, cups_dest_t *dest,
+                       cups_dinfo_t *info,
+                       const char *option);
 
-When successful, the job's numeric identifier is stored in the integer pointed
-to by the `job_id` argument and `IPP_STATUS_OK` is returned.  Otherwise, an IPP
-error status is returned.
+const char * cupsLocalizeDestValue(http_t *http, cups_dest_t *dest,
+                      cups_dinfo_t *info,
+                      const char *option, const char *value);
+```
 
-For example, the following code creates a new job that will print 42 copies of a
-two-sided US Letter document:
+## Отправка задания на печать
 
-    int job_id = 0;
-    int num_options = 0;
-    cups_option_t *options = NULL;
-    
-    num_options = cupsAddOption(CUPS_COPIES, "42",
-                                num_options, &options);
-    num_options = cupsAddOption(CUPS_MEDIA, CUPS_MEDIA_LETTER,
-                                num_options, &options);
-    num_options = cupsAddOption(CUPS_SIDES,
-                                CUPS_SIDES_TWO_SIDED_PORTRAIT,
-                                num_options, &options);
-    
-    if (cupsCreateDestJob(CUPS_HTTP_DEFAULT, dest, info,
-                          &job_id, "My Document", num_options,
-                          options) == IPP_STATUS_OK)
-      printf("Created job: %d\n", job_id);
-    else
-      printf("Unable to create job: %s\n",
-             cupsLastErrorString());
+Когда вы готовы отправить задание на печать, вы создаете задание с помощью функции `cupsCreateDestJob`:
 
-Once the job is created, you submit documents for the job using the
-`cupsStartDestDocument`, `cupsWriteRequestData`, and `cupsFinishDestDocument`
-functions:
+```c
+ipp_status_t cupsCreateDestJob(http_t *http, cups_dest_t *dest,
+                  cups_dinfo_t *info, int *job_id,
+                  const char *title, int num_options,
+                  cups_option_t *options);
+```
 
-    http_status_t
-    cupsStartDestDocument(http_t *http, cups_dest_t *dest,
-                          cups_dinfo_t *info, int job_id,
-                          const char *docname,
-                          const char *format,
-                          int num_options,
-                          cups_option_t *options,
-                          int last_document);
-    
-    http_status_t
-    cupsWriteRequestData(http_t *http, const char *buffer,
-                         size_t length);
-    
-    ipp_status_t
-    cupsFinishDestDocument(http_t *http, cups_dest_t *dest,
-                           cups_dinfo_t *info);
+Параметр title указывает имя задания на печать, например «Мой документ».
+Аргументы `num_options` и `options` определяют параметры задания печати, которые устанавливаются с помощью функции `cupsAddOption`.
 
-The `docname` argument specifies the name of the document, typically the
-original filename.  The `format` argument specifies the MIME media type of the
-document, including the following constants:
+В случае успеха числовой идентификатор задания сохраняется в виде целого числа, на которое указывает параметр job_id, и возвращается IPP_STATUS_OK. В противном случае возвращается статус ошибки IPP.
+
+Например, следующий код создает новое задание для печати 42 копий двустороннего документа US Letter:
+
+```c
+int job_id = 0;
+int num_options = 0;
+cups_option_t *options = NULL;
+
+num_options = cupsAddOption(CUPS_COPIES, "42",
+                            num_options, &options);
+num_options = cupsAddOption(CUPS_MEDIA, CUPS_MEDIA_LETTER,
+                            num_options, &options);
+num_options = cupsAddOption(CUPS_SIDES,
+                            CUPS_SIDES_TWO_SIDED_PORTRAIT,
+                            num_options, &options);
+
+if (cupsCreateDestJob(CUPS_HTTP_DEFAULT, dest, info,
+                      &job_id, "My Document", num_options,
+                      options) == IPP_STATUS_OK)
+  printf("Created job: %d\n", job_id);
+else
+  printf("Unable to create job: %s\n",
+         cupsLastErrorString());
+```
+
+После того, как задание создано, вы отправляете документы в очередь, используя функции `cupsStartDestDocument`, `cupsWriteRequestData` и `cupsFinishDestDocument`:
+
+```c
+http_status_t cupsStartDestDocument(http_t *http, cups_dest_t *dest,
+                      cups_dinfo_t *info, int job_id,
+                      const char *docname,
+                      const char *format,
+                      int num_options,
+                      cups_option_t *options,
+                      int last_document);
+
+http_status_t cupsWriteRequestData(http_t *http, const char *buffer,
+                     size_t length);
+
+ipp_status_t cupsFinishDestDocument(http_t *http, cups_dest_t *dest,
+                       cups_dinfo_t *info);
+```
+
+Параметр `docname` указывает имя документа, обычно исходное имя файла. Параметр `format` указывает тип носителя MIME документа, включая следующие константы:
 
 - `CUPS_FORMAT_JPEG`: "image/jpeg"
 - `CUPS_FORMAT_PDF`: "application/pdf"
 - `CUPS_FORMAT_POSTSCRIPT`: "application/postscript"
 - `CUPS_FORMAT_TEXT`: "text/plain"
 
-The `num_options` and `options` arguments specify per-document print options,
-which at present must be 0 and `NULL`.  The `last_document` argument specifies
-whether this is the last document in the job.
+Аргументы `num_options` и `options` указывают параметры печати для каждого документа, которые в настоящее время должны быть равны 0 и `NULL`. Параметр `last_document` указывает, является ли это последним документом в задании.
 
-For example, the following code submits a PDF file to the job that was just
-created:
+Например, следующий код отправляет PDF-файл только что созданному заданию:
 
-    FILE *fp = fopen("filename.pdf", "rb");
-    size_t bytes;
-    char buffer[65536];
-    
-    if (cupsStartDestDocument(CUPS_HTTP_DEFAULT, dest, info,
-                              job_id, "filename.pdf", 0, NULL,
-                              1) == HTTP_STATUS_CONTINUE)
-    {
-      while ((bytes = fread(buffer, 1, sizeof(buffer), fp)) > 0)
-        if (cupsWriteRequestData(CUPS_HTTP_DEFAULT, buffer,
-                                 bytes) != HTTP_STATUS_CONTINUE)
-          break;
-    
-      if (cupsFinishDestDocument(CUPS_HTTP_DEFAULT, dest,
-                                 info) == IPP_STATUS_OK)
-        puts("Document send succeeded.");
-      else
-        printf("Document send failed: %s\n",
-               cupsLastErrorString());
-    }
-    
-    fclose(fp);
+```c
+FILE *fp = fopen("filename.pdf", "rb");
+size_t bytes;
+char buffer[65536];
 
-# Sending IPP Requests
+if (cupsStartDestDocument(CUPS_HTTP_DEFAULT, dest, info,
+                          job_id, "filename.pdf", 0, NULL,
+                          1) == HTTP_STATUS_CONTINUE) {
+  while ((bytes = fread(buffer, 1, sizeof(buffer), fp)) > 0)
+    if (cupsWriteRequestData(CUPS_HTTP_DEFAULT, buffer,
+                             bytes) != HTTP_STATUS_CONTINUE)
+      break;
 
-CUPS provides a rich API for sending IPP requests to the scheduler or printers,
-typically from management or utility applications whose primary purpose is not
-to send print jobs.
+  if (cupsFinishDestDocument(CUPS_HTTP_DEFAULT, dest,
+                             info) == IPP_STATUS_OK)
+    puts("Document send succeeded.");
+  else
+    printf("Document send failed: %s\n",
+           cupsLastErrorString());
+}
 
-## Connecting to the Scheduler or Printer
+fclose(fp);
+```
 
-The connection to the scheduler or printer is represented by the HTTP connection
-type `http_t`.  The `cupsConnectDest` function connects to the scheduler or
-printer associated with the destination:
+# Отправка IPP запросов
 
-    http_t *
-    cupsConnectDest(cups_dest_t *dest, unsigned flags, int msec,
-                    int *cancel, char *resource,
-                    size_t resourcesize, cups_dest_cb_t cb,
-                    void *user_data);
+CUPS предоставляет богатый API для отправки запросов IPP планировщику или принтерам, как правило, из управляющих или служебных приложений, основной целью которых не является отправка заданий на печать.
 
-The `dest` argument specifies the destination to connect to.
+## Подключение к планировщику или принтеру
 
-The `flags` argument specifies whether you want to connect to the scheduler
-(`CUPS_DEST_FLAGS_NONE`) or device/printer (`CUPS_DEST_FLAGS_DEVICE`) associated
-with the destination.
+Соединение с планировщиком или принтером представлено типом соединения `http_t`. С промощью функции `cupsConnectDest` осуществляется подключение к планировщику или принтеру, связанному с назначением:
+
+```c
+http_t *cupsConnectDest(cups_dest_t *dest, unsigned flags, int msec,
+                int *cancel, char *resource,
+                size_t resourcesize, cups_dest_cb_t cb,
+                void *user_data);
+```
+
+Параметр `dest` указывает назначение для подключения.
+
+Параметр `flags` указывает, хотите ли вы подключиться к планировщику (`CUPS_DEST_FLAGS_NONE`) или устройству/принтеру `CUPS_DEST_FLAGS_DEVICE`), связанному с назначением.
 
 The `msec` argument specifies how long you are willing to wait for the
 connection to be established in milliseconds.  Specify a value of `-1` to wait
