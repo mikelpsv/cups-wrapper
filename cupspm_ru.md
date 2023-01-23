@@ -660,101 +660,79 @@ http_t *cupsConnectDest(cups_dest_t *dest, unsigned flags, int msec,
 
 Параметр `flags` указывает, хотите ли вы подключиться к планировщику (`CUPS_DEST_FLAGS_NONE`) или устройству/принтеру `CUPS_DEST_FLAGS_DEVICE`), связанному с назначением.
 
-The `msec` argument specifies how long you are willing to wait for the
-connection to be established in milliseconds.  Specify a value of `-1` to wait
-indefinitely.
+Параметр `msec` указывает, как долго вы готовы ждать соединения должно быть установлено в миллисекундах. Укажите значение `-1`, чтобы ждать бесконечно.
 
-The `cancel` argument specifies the address of an integer variable that can be
-set to a non-zero value to cancel the connection.  Specify a value of `NULL`
-to not provide a cancel variable.
+Параметр `cancel` указывает адрес целочисленной переменной, для которой можно установить ненулевое значение, чтобы отменить соединение. Укажите значение `NULL`, чтобы не указывать переменную отмены.
 
-The `resource` and `resourcesize` arguments specify the address and size of a
-character string array to hold the path to use when sending an IPP request.
+Параметры `resource` и `resourcesize` указывают адрес и размер массива строк символов, в котором хранится путь, используемый при отправке запроса IPP.
 
-The `cb` and `user_data` arguments specify a destination callback function that
-returns 1 to continue connecting or 0 to stop.  The destination callback work
-the same way as the one used for the `cupsEnumDests` function.
+Параметры `cb` и `user_data` определяют функцию обратного вызова, которая возвращает 1 для продолжения подключения или 0 для остановки. Обратный вызов назначения работает так же, как и для функции `cupsEnumDests`.
 
-On success, a HTTP connection is returned that can be used to send IPP requests
-and get IPP responses.
+В случае успеха возвращается HTTP-соединение, которое можно использовать для отправки запросов IPP и получения ответов IPP.
 
-For example, the following code connects to the printer associated with a
-destination with a 30 second timeout:
+Например, следующий код подключается к принтеру, связанному с назначением, с тайм-аутом 30 секунд:
 
-    char resource[256];
-    http_t *http = cupsConnectDest(dest, CUPS_DEST_FLAGS_DEVICE,
-                                   30000, NULL, resource,
-                                   sizeof(resource), NULL, NULL);
+```c
+char resource[256];
+http_t *http = cupsConnectDest(dest, CUPS_DEST_FLAGS_DEVICE,
+                               30000, NULL, resource,
+                               sizeof(resource), NULL, NULL);
+```
 
-## Creating an IPP Request
+## Создание запроса IPP
 
-IPP requests are represented by the IPP message type `ipp_t` and each IPP
-attribute in the request is representing using the type `ipp_attribute_t`.  Each
-IPP request includes an operation code (`IPP_OP_CREATE_JOB`,
-`IPP_OP_GET_PRINTER_ATTRIBUTES`, etc.) and a 32-bit integer identifier.
+Запросы IPP представлены IPP сообщением типа «ipp_t», и каждый атрибут IPP в запросе представлен типом «ipp_attribute_t». Каждый запрос IPP включает код операции (`IPP_OP_CREATE_JOB`, `IPP_OP_GET_PRINTER_ATTRIBUTES` и т. д.) и 32-битный целочисленный идентификатор.
 
-The `ippNewRequest` function creates a new IPP request:
+Функция `ippNewRequest` создает новый IPP запрос:
 
-    ipp_t *
-    ippNewRequest(ipp_op_t op);
+```c
+ipp_t * ippNewRequest(ipp_op_t op);
+```
 
-The `op` argument specifies the IPP operation code for the request.  For
-example, the following code creates an IPP Get-Printer-Attributes request:
+Параметр `op` указывает код операции IPP для запроса. Например, следующий код создает запрос IPP Get-Printer-Attributes:
 
-    ipp_t *request = ippNewRequest(IPP_OP_GET_PRINTER_ATTRIBUTES);
+```c
+ipp_t *request = ippNewRequest(IPP_OP_GET_PRINTER_ATTRIBUTES);
+```
 
-The request identifier is automatically set to a unique value for the current
-process.
+Идентификатору запроса автоматически присваивается уникальное значение для текущего процесса.
 
-Each IPP request starts with two IPP attributes, "attributes-charset" and
-"attributes-natural-language", followed by IPP attribute(s) that specify the
-target of the operation.  The `ippNewRequest` automatically adds the correct
-"attributes-charset" and "attributes-natural-language" attributes, but you must
-add the target attribute(s).  For example, the following code adds the
-"printer-uri" attribute to the IPP Get-Printer-Attributes request to specify
-which printer is being queried:
+Каждый запрос IPP начинается с двух атрибутов, «attributes-charset» и «attributes-natural-language», за которыми следуют атрибуты IPP, которые определяют цель операции. `ippNewRequest` автоматически добавляет правильные атрибуты "attributes-charset" и "attributes-natural-language", но вы должны добавить целевые атрибуты. Например, следующий код добавляет атрибут «printer-uri» в запрос IPP Get-Printer-Attributes, чтобы указать, какой принтер запрашивается:
 
-    const char *printer_uri = cupsGetOption("device-uri",
-                                            dest->num_options,
-                                            dest->options);
-    
-    ippAddString(request, IPP_TAG_OPERATION, IPP_TAG_URI,
-                 "printer-uri", NULL, printer_uri);
+```c
+const char *printer_uri = cupsGetOption("device-uri",
+                                        dest->num_options,
+                                        dest->options);
 
-> **Note:**
+ippAddString(request, IPP_TAG_OPERATION, IPP_TAG_URI,
+             "printer-uri", NULL, printer_uri);
+```
+
+> **Заметка:**
 > 
-> If we wanted to query the scheduler instead of the device, we would look
-> up the "printer-uri-supported" option instead of the "device-uri" value.
+> Если бы мы хотели запросить планировщик, а не устройство, мы бы указали параметр «printer-uri-support» вместо значения «device-uri». ??
 
-The `ippAddString` function adds the "printer-uri" attribute the the IPP
-request.  The `IPP_TAG_OPERATION` argument specifies that the attribute is part
-of the operation.  The `IPP_TAG_URI` argument specifies that the value is a
-Universal Resource Identifier (URI) string.  The `NULL` argument specifies there
-is no language (English, French, Japanese, etc.) associated with the string, and
-the `printer_uri` argument specifies the string value.
+Функция `ippAddString` добавляет атрибут «printer-uri» в IPP.
+запрос. Аргумент `IPP_TAG_OPERATION` указывает, что атрибут является частью операции. Аргумент `IPP_TAG_URI` указывает, что значение представляет собой строку универсального идентификатора ресурса (URI). Аргумент `NULL` указывает на отсутствие языка (английского, французского, японского и т. д.), связанного со строкой, а аргумент `printer_uri` указывает строковое значение.
 
-The IPP Get-Printer-Attributes request also supports an IPP attribute called
-"requested-attributes" that lists the attributes and values you are interested
-in.  For example, the following code requests the printer state attributes:
+Запрос IPP Get-Printer-Attributes также поддерживает параметр IPP «requested-attributes», в котором перечислены интересующие вас атрибуты и значения. Например, следующий код запрашивает атрибуты состояния принтера:
 
-    static const char * const requested_attributes[] =
-    {
-      "printer-state",
-      "printer-state-message",
-      "printer-state-reasons"
-    };
-    
-    ippAddStrings(request, IPP_TAG_OPERATION, IPP_TAG_KEYWORD,
-                  "requested-attributes", 3, NULL,
-                  requested_attributes);
+```c
+static const char * const requested_attributes[] =
+{
+  "printer-state",
+  "printer-state-message",
+  "printer-state-reasons"
+};
 
-The `ippAddStrings` function adds an attribute with one or more strings, in this
-case three.  The `IPP_TAG_KEYWORD` argument specifies that the strings are
-keyword values, which are used for attribute names.  All strings use the same
-language (`NULL`), and the attribute will contain the three strings in the
-array `requested_attributes`.
+ippAddStrings(request, IPP_TAG_OPERATION, IPP_TAG_KEYWORD,
+              "requested-attributes", 3, NULL,
+              requested_attributes);
+```
 
-CUPS provides many functions to adding attributes of different types:
+Функция `ippAddStrings` добавляет атрибут с одной или несколькими строками, в данном случае тремя. Аргумент `IPP_TAG_KEYWORD` указывает, что строки являются значениями ключевых слов, которые используются для имен атрибутов. Все строки используют один и тот же язык (`NULL`), а атрибут будет содержать три строки в массиве `requested_attributes`.
+
+CUPS предоставляет множество функций для добавления атрибутов разных типов::
 
 - `ippAddBoolean` adds a boolean (`IPP_TAG_BOOLEAN`) attribute with one value.
 - `ippAddInteger` adds an enum (`IPP_TAG_ENUM`) or integer (`IPP_TAG_INTEGER`)
@@ -778,120 +756,108 @@ CUPS provides many functions to adding attributes of different types:
 - `ippAddStrings` adds a charset, keyword, mimeMediaType, name, naturalLanguage,
   text, uri, or uriScheme attribute with one or more values.
 
-## Sending the IPP Request
+## Отправка IPP запроса
 
-Once you have created the IPP request, you can send it using the
-`cupsDoRequest` function.  For example, the following code sends the IPP
-Get-Printer-Attributes request to the destination and saves the response:
+Создав запрос IPP, вы можете отправить его с помощью функции `cupsDoRequest`. Например, следующий код отправляет запрос IPP Get-Printer-Attributes получателю и сохраняет ответ:
 
-    ipp_t *response = cupsDoRequest(http, request, resource);
+```c
+ipp_t *response = cupsDoRequest(http, request, resource);
+```
 
-For requests like Send-Document that include a file, the `cupsDoFileRequest`
-function should be used:
+Для таких запросов, как Send-Document, которые включают файл, следует использовать функцию `cupsDoFileRequest`:
 
-    ipp_t *response = cupsDoFileRequest(http, request, resource,
-                                        filename);
+```c
+ipp_t *response = cupsDoFileRequest(http, request, resource,
+                                    filename);
+```
 
-Both `cupsDoRequest` and `cupsDoFileRequest` free the IPP request.  If a valid
-IPP response is received, it is stored in a new IPP message (`ipp_t`) and
-returned to the caller.  Otherwise `NULL` is returned.
+И `cupsDoRequest`, и `cupsDoFileRequest` освобождают запрос IPP. Если получен действительный ответ, он сохраняется в новом сообщении IPP (`ipp_t`) и возвращается вызывающей стороне. В противном случае возвращается `NULL`.
 
-The status from the most recent request can be queried using the `cupsLastError`
-function, for example:
+Статус самого последнего запроса можно запросить с помощью функции `cupsLastError`, например:
 
-    if (cupsLastError() >= IPP_STATUS_ERROR_BAD_REQUEST)
-    {
-      /* request failed */
-    }
+```c
+if (cupsLastError() >= IPP_STATUS_ERROR_BAD_REQUEST)
+{
+  /* request failed */
+}
+```
 
-A human-readable error message is also available using the `cupsLastErrorString`
-function:
+Человекочитаемое сообщение об ошибке также доступно с использованием функции `cupsLastErrorString`:
 
-    if (cupsLastError() >= IPP_STATUS_ERROR_BAD_REQUEST)
-    {
-      /* request failed */
-      printf("Request failed: %s\n", cupsLastErrorString());
-    }
+```c
+if (cupsLastError() >= IPP_STATUS_ERROR_BAD_REQUEST)
+{
+  /* request failed */
+  printf("Request failed: %s\n", cupsLastErrorString());
+}
+```
 
-## Processing the IPP Response
+## Обработка IPP ответа
 
-Each response to an IPP request is also an IPP message (`ipp_t`) with its own
-IPP attributes (`ipp_attribute_t`) that includes a status code (`IPP_STATUS_OK`,
-`IPP_STATUS_ERROR_BAD_REQUEST`, etc.) and the corresponding 32-bit integer
-identifier from the request.
+Каждый ответ на запрос IPP также является сообщением IPP (`ipp_t`) со своими собственными атрибутами (`ipp_attribute_t`), которые включают код состояния (`IPP_STATUS_OK`, `IPP_STATUS_ERROR_BAD_REQUEST` и т. д.) и соответствующее 32-битное целое число идентификатор из запроса.
 
-For example, the following code finds the printer state attributes and prints
-their values:
+Например, следующий код находит атрибуты состояния принтера и печатает их значения:
 
-    ipp_attribute_t *attr;
-    
-    if ((attr = ippFindAttribute(response, "printer-state",
-                                 IPP_TAG_ENUM)) != NULL)
-    {
-      printf("printer-state=%s\n",
-             ippEnumString("printer-state", ippGetInteger(attr, 0)));
-    }
-    else
-      puts("printer-state=unknown");
-    
-    if ((attr = ippFindAttribute(response, "printer-state-message",
-                                 IPP_TAG_TEXT)) != NULL)
-    {
-      printf("printer-state-message=\"%s\"\n",
-             ippGetString(attr, 0, NULL)));
-    }
-    
-    if ((attr = ippFindAttribute(response, "printer-state-reasons",
-                                 IPP_TAG_KEYWORD)) != NULL)
-    {
-      int i, count = ippGetCount(attr);
-    
-      puts("printer-state-reasons=");
-      for (i = 0; i < count; i ++)
-        printf("    %s\n", ippGetString(attr, i, NULL)));
-    }
+```c
+ipp_attribute_t *attr;
 
-The `ippGetCount` function returns the number of values in an attribute.
+if ((attr = ippFindAttribute(response, "printer-state",
+                             IPP_TAG_ENUM)) != NULL){
+  printf("printer-state=%s\n",
+         ippEnumString("printer-state", ippGetInteger(attr, 0)));
+} else
+  puts("printer-state=unknown");
 
-The `ippGetInteger` and `ippGetString` functions return a single integer or
-string value from an attribute.
+if ((attr = ippFindAttribute(response, "printer-state-message",
+                             IPP_TAG_TEXT)) != NULL){
+  printf("printer-state-message=\"%s\"\n",
+         ippGetString(attr, 0, NULL)));
+}
 
-The `ippEnumString` function converts a enum value to its keyword (string)
-equivalent.
+if ((attr = ippFindAttribute(response, "printer-state-reasons",
+                             IPP_TAG_KEYWORD)) != NULL){
+  int i, count = ippGetCount(attr);
 
-Once you are done using the IPP response message, free it using the `ippDelete`
-function:
+  puts("printer-state-reasons=");
+  for (i = 0; i < count; i ++)
+    printf("    %s\n", ippGetString(attr, i, NULL)));
+}
+```
 
-    ippDelete(response);
+Функция `ippGetCount` возвращает количество значений в атрибуте.
 
-## Authentication
+Функции `ippGetInteger` и `ippGetString` возвращают одно целое или строковое значение из атрибута.
 
-CUPS normally handles authentication through the console.  GUI applications
-should set a password callback using the `cupsSetPasswordCB2` function:
+Функция `ippEnumString` преобразует значение перечисления в его эквивалент ключевого слова (строку).
 
-    void
-    cupsSetPasswordCB2(cups_password_cb2_t cb, void *user_data);
+Когда вы закончите использовать ответное сообщение IPP, освободите его с помощью функции `ippDelete`:
 
-The password callback will be called when needed and is responsible for setting
-the current user name using `cupsSetUser` and returning a string:
+```c
+ippDelete(response);
+```
 
-    const char *
-    cups_password_cb2(const char *prompt, http_t *http,
-                      const char *method, const char *resource,
-                      void *user_data);
+## Аутентификация
 
-The `prompt` argument is a string from CUPS that should be displayed to the
-user.
+CUPS обычно обрабатывает аутентификацию через консоль. Приложения с графическим интерфейсом должны устанавливать пароль с помощью функции обратного вызова, передавая ее в функцию `cupsSetPasswordCB2`:
 
-The `http` argument is the connection hosting the request that is being
-authenticated.  The password callback can call the `httpGetField` and
-`httpGetSubField` functions to look for additional details concerning the
-authentication challenge.
+```c
+void cupsSetPasswordCB2(cups_password_cb2_t cb, void *user_data);
+```
 
-The `method` argument specifies the HTTP method used for the request and is
-typically "POST".
+Обратный вызов вызова для установки пароля будет вызываться при необходимости при установке текущего имени пользователя с помощью `cupsSetUser` (и возврат строки??):
 
-The `resource` argument specifies the path used for the request.
+```c
+const char * cups_password_cb2(const char *prompt, http_t *http,
+                  const char *method, const char *resource,
+                  void *user_data);
+```
 
-The `user_data` argument provides the user data pointer from the
-`cupsSetPasswordCB2` call.
+Параметр `prompt` представляет собой строку из CUPS, которая должна отображаться пользователю.
+
+Параметр `http` — это соединение, на котором размещается аутентифицируемый запрос. Обратный вызов пароля может вызывать функции `httpGetField` и `httpGetSubField` для поиска дополнительных деталей, касающихся запроса аутентификации.
+
+Параметр `method` указывает метод HTTP, используемый для запроса, и обычно это «POST».
+
+Параметр `resource` указывает путь, используемый для запроса.
+
+Параметр `user_data` содержит указатель пользовательских данных из вызова `cupsSetPasswordCB2`.
