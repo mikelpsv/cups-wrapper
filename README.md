@@ -1,4 +1,4 @@
-# cups-wrapper
+# cups-wrapper experiments
 
 Примеры использование библиотеки cups
 
