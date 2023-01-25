@@ -1,6 +1,10 @@
+#define DEBUG
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <cups/cups.h>
+
+
 
 typedef struct{
 	int num_dests;
@@ -103,6 +107,22 @@ void example_enum_dests_v1(){
 }
 
 
+void example_copy_dest_info(){
+	
+	cups_dest_t *dest;
+	
+	dest = cupsGetNamedDest(CUPS_HTTP_DEFAULT, "ECOM-чб-1", "");
+
+ 	cups_dinfo_t *info = cupsCopyDestInfo(CUPS_HTTP_DEFAULT, dest);
+	int can_duplex = cupsCheckDestSupported(CUPS_HTTP_DEFAULT, dest, info, CUPS_MEDIA, CUPS_MEDIA_4X6);
+	
+	printf("%s %s %d", dest->name, dest->instance, can_duplex);
+ 	
+	cupsFreeDestInfo(info);
+
+ 	
+}
+
 
 
 /*
@@ -120,8 +140,10 @@ void example_enum_dests_v0(){
 }*/
 
 int main (int argc, char **argv) {
-  //example_enum_dests_v0();
-	example_enum_dests_v1();
+  // example_enum_dests_v0();
+  // example_enum_dests_v1();
+  example_copy_dest_info();
+
   return (0);
 }
 

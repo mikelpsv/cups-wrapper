@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS= -c -Wall
+CFLAGS= -c -g -Wall
 BUILD=.build
 
 all: cups-wrapper
