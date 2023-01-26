@@ -114,7 +114,7 @@ void example_copy_dest_info(){
 	dest = cupsGetNamedDest(CUPS_HTTP_DEFAULT, "ECOM-чб-1", "");
 
  	cups_dinfo_t *info = cupsCopyDestInfo(CUPS_HTTP_DEFAULT, dest);
-	int can_duplex = cupsCheckDestSupported(CUPS_HTTP_DEFAULT, dest, info, CUPS_MEDIA, CUPS_MEDIA_4X6);
+	int can_duplex = cupsCheckDestSupported(CUPS_HTTP_DEFAULT, dest, info, CUPS_COPIES, NULL);
 	
 	printf("%s %s %d", dest->name, dest->instance, can_duplex);
  	
